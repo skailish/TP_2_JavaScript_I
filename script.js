@@ -94,13 +94,12 @@ const vendedoraDelMes = (mes, anio, local) => {
         return ventasPorVendedora[vendedora] > ventasPorVendedora[vendedoraDelMes] ? vendedora : vendedoraDelMes
     }
 
-    const ventasPorVendedora = local.ventas.filter((venta) => aVentasPorMes(venta, mes, anio)).reduce((listaParcial, venta) => aVentasPorVendedora(listaParcial, venta, local), {})
+    const ventasPorVendedora = local.ventas.filter(venta => aVentasPorMes(venta, mes, anio)).reduce((listaParcial, venta) => aVentasPorVendedora(listaParcial, venta, local), {})
 
 
     return local.vendedoras.reduce((vendedoraDelMes, vendedora) => aVendedoraDelMes(vendedoraDelMes, vendedora, ventasPorVendedora))
 
 }
-
 
 
 // ventasMes(mes, anio, local): obtiene el valor total de las ventas de un mes.El mes es un número entero que va desde el 1(enero) hasta el 12(diciembre).
@@ -165,22 +164,23 @@ const ventasSucursal = (sucursal, local) => {
     return local.ventas.reduce((sumaParcial, venta) => ventasPorSucursal(sumaParcial, venta, sucursal), 0)
 }
 
+
+
+
 // Las funciones ** ventasSucursal ** y ** ventasVendedora ** tienen mucho código en común, ya que es la misma funcionalidad pero trabajando con una propiedad distinta.Entonces, ¿cómo harías para que ambas funciones reutilicen código y evitemos repetir ?
 
-const conteoDeVentasPorParametro = (parametro, local) => {
+const conteoDeVentas = (key, value, local) => {
 
-    const obtenerPropiedad = (objeto, valor) => {
-        return Object.keys(objeto).find(propiedad => objeto[propiedad] === valor);
-    }
-
-    const ventasPorParametro = (sumaParcial, venta, parametro) => {
-        const propiedad = obtenerPropiedad(venta, parametro);
-        sumaParcial += venta[propiedad] === parametro ? 1 : 0;
+    const ventasPorParametro = (sumaParcial, venta, value) => {
+        sumaParcial += venta[key] === value ? 1 : 0;
         return sumaParcial
     }
 
-    return local.ventas.reduce((sumaParcial, venta) => ventasPorParametro(sumaParcial, venta, parametro), 0)
+    return local.ventas.reduce((sumaParcial, venta) => ventasPorParametro(sumaParcial, venta, value), 0)
 }
+
+// const ventasSucursal = (sucursal, local) => conteoDeVentas("sucursal", sucursal, local)
+// const ventasVendedora = (nombre, local) => conteoDeVentas("nombreVendedora", nombre, local)
 
 // sucursalDelMes(mes, anio, local) **: dado dos parámetros numéricos, (mes, anio) y devuelve el nombre de la sucursal que más vendió en plata en el mes.No cantidad de ventas, sino importe total de las ventas.El importe de una venta es el que indica la función`precioMaquina`.El mes es un número entero que va desde el 1(enero) hasta el 12(diciembre).
 
@@ -196,13 +196,13 @@ const sucursalDelMes = (mes, anio, local) => {
         return listaParcial
     }
 
-    const aVendedoraDelMes = (sucursalDelMes, sucursal, ventasPorSucursal) => {
+    const aSucursalDelMes = (sucursalDelMes, sucursal, ventasPorSucursal) => {
         return ventasPorSucursal[sucursal] > ventasPorSucursal[sucursalDelMes] ? sucursal : sucursalDelMes
     }
 
     const ventasPorSucursal = local.ventas.filter((venta) => aVentasPorMes(venta, mes, anio)).reduce((listaParcial, venta) => aVentasPorSucursal(listaParcial, venta, local), {})
 
-    return local.sucursales.reduce((sucursalDelMes, sucursal) => aVendedoraDelMes(sucursalDelMes, sucursal, ventasPorSucursal))
+    return local.sucursales.reduce((sucursalDelMes, sucursal) => aSucursalDelMes(sucursalDelMes, sucursal, ventasPorSucursal))
 
 }
 
@@ -251,7 +251,7 @@ const renderPorMes = local => {
 const renderPorSucursal = local => {
 
     const aRenderizado = (renderParcial, sucursal, ventasPorSucursal) => {
-        renderParcial += `- Total de ${sucursal} : ${ventasPorSucursal[sucursal]}\n`
+        renderParcial += `- Total de ${sucursal} : ${ventasPorSucursal[sucursal] ? ventasPorSucursal[sucursal] : 0}\n`
         return renderParcial
     };
 
@@ -260,7 +260,7 @@ const renderPorSucursal = local => {
         return listaParcial
     }
 
-    const ventasPorSucursal = local.ventas.reduce((listaParcial, venta) => aVentasPorSucursal(listaParcial, venta, local))
+    const ventasPorSucursal = local.ventas.reduce((listaParcial, venta) => aVentasPorSucursal(listaParcial, venta, local), {})
 
     return local.sucursales.reduce((renderParcial, sucursal) => aRenderizado(renderParcial, sucursal, ventasPorSucursal), `Ventas por sucursal:\n----------------------------\n`)
 }
@@ -298,9 +298,9 @@ const render = local => {
 
     const ventasPorVendedora = local.ventas.reduce((listaParcial, venta) => aVentasPorVendedora(listaParcial, venta, local), {})
 
-    const vendedoraDelMes = local.vendedoras.reduce((vendedoraDelMes, vendedora) => aVendedoraDelMes(vendedoraDelMes, vendedora, ventasPorVendedora))
+    const vendedoraConMasVentas = local.vendedoras.reduce((vendedoraDelMes, vendedora) => aVendedoraDelMes(vendedoraDelMes, vendedora, ventasPorVendedora))
 
-    const reporte = `Reporte\n==========================================\n${renderPorMes(local)}------------------------------------------\n${renderPorSucursal(local)}------------------------------------------\nProducto estrella: ${componenteMasVendido([...local.ventas])}\n------------------------------------------\nVendedora que más ingresos generó: ${vendedoraDelMes}`
+    const reporte = `Reporte\n==========================================\n${renderPorMes(local)}------------------------------------------\n${renderPorSucursal(local)}------------------------------------------\nProducto estrella: ${componenteMasVendido([...local.ventas])}\n------------------------------------------\nVendedora que más ingresos generó: ${vendedoraConMasVentas}`
 
     return reporte;
 
