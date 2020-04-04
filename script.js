@@ -214,6 +214,7 @@ const sucursalDelMes = (mes, anio, local) => {
 // ```
 
 const renderPorMes = local => {
+
     const aRenderizado = (renderParcial, fecha, ventasPorMes) => {
         renderParcial += `- Total de ${fecha} : ${ventasPorMes[fecha]}\n`
         return renderParcial
@@ -221,16 +222,12 @@ const renderPorMes = local => {
 
     const obtenerMesAnio = fecha => {
         const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-
         const fechaCompleta = meses[fecha.getMonth()] + " " + fecha.getFullYear();
-
         return fechaCompleta
     }
 
-
     const aVentasPorMes = (listaParcial, venta, local) => {
-        const precios = [...local.precios];
-        listaParcial[obtenerMesAnio(venta.fecha)] = listaParcial[obtenerMesAnio(venta.fecha)] + precioMaquina([...venta.componentes], precios) || precioMaquina([...venta.componentes], precios);
+        listaParcial[obtenerMesAnio(venta.fecha)] = listaParcial[obtenerMesAnio(venta.fecha)] + precioMaquina([...venta.componentes], [...local.precios]) || precioMaquina([...venta.componentes], [...local.precios]);
         return listaParcial
     }
 
@@ -241,7 +238,6 @@ const renderPorMes = local => {
     return fechas.reduce((renderParcial, fecha) => aRenderizado(renderParcial, fecha, ventasPorMes), `Ventas por mes:\n----------------------------\n`)
 }
 
-console.log(renderPorMes(local))
 
 // renderPorSucursal(local): Muestra una lista del importe total vendido por cada sucursal, p.ej. (los datos mostrados no son los resultados reales):
 
@@ -260,8 +256,7 @@ const renderPorSucursal = local => {
     };
 
     const aVentasPorSucursal = (listaParcial, venta, local) => {
-        const precios = [...local.precios];
-        listaParcial[venta.sucursal] = listaParcial[venta.sucursal] + precioMaquina([...venta.componentes], precios) || precioMaquina([...venta.componentes], precios);
+        listaParcial[venta.sucursal] = listaParcial[venta.sucursal] + precioMaquina([...venta.componentes], [...local.precios]) || precioMaquina([...venta.componentes], [...local.precios]);
         return listaParcial
     }
 
@@ -270,7 +265,6 @@ const renderPorSucursal = local => {
     return local.sucursales.reduce((renderParcial, sucursal) => aRenderizado(renderParcial, sucursal, ventasPorSucursal), `Ventas por sucursal:\n----------------------------\n`)
 }
 
-console.log(renderPorSucursal(local))
 
 // render(local): Tiene que mostrar la unión de los dos reportes anteriores, cual fue el producto más vendido y la vendedora que más ingresos generó, p.ej. (los datos mostrados no son los resultados reales):
 
@@ -292,13 +286,24 @@ console.log(renderPorSucursal(local))
 
 const render = local => {
 
+    const aVentasPorVendedora = (listaParcial, venta, local) => {
+        const precios = [...local.precios];
+        listaParcial[venta.nombreVendedora] = listaParcial[venta.nombreVendedora] + precioMaquina([...venta.componentes], precios) || precioMaquina([...venta.componentes], precios);
+        return listaParcial
+    }
 
-    const aRenderizado = (renderParcial, sucursal, local) => {
-        renderParcial += `${sucursal} : ${ventasSucursal(sucursal, local)}\n`
-        return renderParcial
-    };
+    const aVendedoraDelMes = (vendedoraDelMes, vendedora, ventasPorVendedora) => {
+        return ventasPorVendedora[vendedora] > ventasPorVendedora[vendedoraDelMes] ? vendedora : vendedoraDelMes
+    }
 
+    const ventasPorVendedora = local.ventas.reduce((listaParcial, venta) => aVentasPorVendedora(listaParcial, venta, local), {})
 
-    return local.sucursales.reduce((renderParcial, sucursal) => aRenderizado(renderParcial, sucursal, local), `Ventas por sucursal:\n----------------------------\n`)
+    const vendedoraDelMes = local.vendedoras.reduce((vendedoraDelMes, vendedora) => aVendedoraDelMes(vendedoraDelMes, vendedora, ventasPorVendedora))
+
+    const reporte = `Reporte\n==========================================\n${renderPorMes(local)}------------------------------------------\n${renderPorSucursal(local)}------------------------------------------\nProducto estrella: ${componenteMasVendido([...local.ventas])}\n------------------------------------------\nVendedora que más ingresos generó: ${vendedoraDelMes}`
+
+    return reporte;
 
 }
+
+console.log(render(local))
